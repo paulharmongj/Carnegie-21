@@ -8,11 +8,17 @@
 #
 
 #reads in the dataset needed
+
+projectWD <- "Z:/Carnegie Classification/Paul Harmon 2018 Carnegie Update Info/Carnegie18"
+setwd(projectWD)
+
 library(DT)
 library(dplyr);library(ggplot2);library(ggthemes);library(mclust);library(ggforce);library(shinyjs)
 cc2015 <- filter(read.csv("CC2015data.csv",header = TRUE),BASIC2015 %in%c(15,16,17))
 #X:/PH_Desktop/Carnegie2018/Carnegie18/2018PublicData_Jan31.csv
 cc18 <- filter(read.csv("2018PublicData_Jan31.csv"), BASIC2018 %in% c(15,16,17))
+
+CC2021 <- read.csv("CC2021data_Feb04.csv", header = TRUE)
 
 names <- unique(cc2015$NAME)
 #gets the right package going
@@ -98,7 +104,8 @@ ui <- fluidPage(
     # Show a plot of the generated distribution
     mainPanel(
       tabsetPanel(type = "pills",
-                  tabPanel("2018 Update",list(plotOutput("classPlot"),tableOutput("table.out"))),
+                  tabPanel("2021 Update",list(plotOutput("classPlot"),tableOutput("table.out"))),
+                  tabPanel("2018 Update",list(plotOutput("classPlot"))),
                   tabPanel("2015 Update", plotOutput("ccPlot"))
                   
                   
@@ -112,6 +119,7 @@ ui <- fluidPage(
 # GLOBAL CODE #######################################################
 cc2015 <- read.csv("CC2015data.csv",header = TRUE)
 cc18 <- read.csv('2018PublicData_Jan31.csv', header = TRUE)
+CC2021 <- read.csv("CC2021data_Feb04.csv", header = TRUE)
 
 #function for ranking the data
 minrank <- function(x){rank(x, ties.method = "min")}
@@ -125,6 +133,12 @@ cc18Ps <-
   cc18[,c("NAME","BASIC2010","BASIC2015","BASIC2018","FACNUM","HUM_RSD","OTHER_RSD","SOCSC_RSD","STEM_RSD","PDNFRSTAFF","S.ER.D","NONS.ER.D")]
 cc18Ps.rm <- filter(cc18Ps, BASIC2018 %in% c(15,16)) #removes those pesky R3 schools
 cc18Ps <- na.omit(as_tibble(cbind(cc18Ps.rm[,c(1:4)],lapply(cc18Ps.rm[,5:12],replace_0)))) #replaces with 0's
+## do the same for 2021:
+cc21Ps <-
+  CC2021[,c("name","basic2021","facnum","hum_rsd","oth_rsd","socsc_rsd","stem_rsd","pdnfrstaff","serd","nonserd")]
+cc21Ps.rm <- filter(cc21Ps, basic2021 %in% c(15,16)) 
+cc21Ps <- na.omit(as_tibble(cbind(cc21Ps.rm[,c(1:2)],lapply(cc21Ps.rm[,3:10],replace_0)))) #replaces with 0's
+dim(cc21Ps)  
 
 
 ### Calculate Ranks: 
@@ -137,7 +151,11 @@ cc18percap <- cc18Ps[,c("PDNFRSTAFF","S.ER.D","NONS.ER.D")]/cc18Ps$FACNUM
 colnames(cc18percap) <- c("PDNRSTAFF_PC", "S.ER.D_PC", "NONS.ER.D_PC")
 cc18percap.r<-data.frame(sapply(cc18percap,avrank))
 
-
+## For 2021
+cc21.r <- data.frame(cc21Ps[,1:2],sapply(cc21Ps[,-c(1:2)],avrank)) 
+cc21percap <- cc21Ps[,c("pdnfrstaff","serd","nonserd")]/cc21Ps$facnum
+colnames(cc21percap) <- c("pdnfrstaff","serd","nonserd")
+cc21percap.r<-data.frame(sapply(cc21percap,avrank))
 
 
 
@@ -154,6 +172,104 @@ server <- function(input, output,session) {
   #reset sliders: 
   observeEvent(input$resetAll,{
     reset("form")
+  })
+  
+  output$classPlot <- renderPlot({
+    
+    inst_name <- new_school()
+    new_dat <- cc21Ps
+    
+    
+    ##References School of Interest  
+    a <- which(as.character(new_dat$NAME) == as.character(inst_name))
+    #current_school <- as.character(input$school)
+    
+    ##To Move Left or Right
+    # adds one phd to the number of social science phds
+    new_dat[a,"socsc_rsd"] <- new_dat[a,"socsc_rsd"] + input$sosc
+    #adds one phd to the number of other phds
+    new_dat[a,"oth_rsd"] <- new_dat[a,"oth_rsd"] + input$other
+    #adds one phd to the number of stem phds
+    new_dat[a,"stem_rsd"] <- new_dat[a,"stem_rsd"] + input$stem
+    #adds one phd to the number of humanities phds
+    new_dat[a,"hum_rsd"] <- new_dat[a,"hum_rsd"] + input$hum
+    
+    
+    #adds research staff by 1 ; also adds to the FACNUM
+    new_dat[a,"pdnfrstaff"] <- new_dat[a,"pdnfrstaff"] + input$staff
+    
+    #adds to NonSERD expenditures
+    new_dat[a,"nonserd"] <- new_dat[a,"nonserd"] + input$nonserd
+    #adds to SERD expenditures
+    new_dat[a,"serd"] <- new_dat[a,"serd"] + input$serd
+    
+    ## Calculates the Per-Capita version of the data frame
+    #creates the newdat pc object 
+    new_dat_pc <- new_dat[,c("pdnfrstaff","serd","nonserd")]/new_dat$FACNUM
+    
+    ### Calculates the 2021 Version of the Carnegie Classifications: 
+    
+    
+    AGcc <- function(x){
+      #rank the data (everything but name (column 1) and basic2021 (column 2))
+      ranked <- data.frame(x[,1:2],sapply(x[,-c(1:2)],avrank)) 
+      #get pc's (Principal Components Analysis) 
+      pca.ranked <- prcomp(ranked[,-c(1:3)], scale = TRUE)
+      summary <- summary(pca.ranked)
+      standard.score <- pca.ranked$x[,1] - min(pca.ranked$x[,1])
+      #needs to return the standardized scores
+      return(list(scorez = standard.score, sum =summary))
+    }
+    #function for percap
+    PCcc <- function(x){
+      #rank the data
+      ranked.dat <- data.frame(sapply(new_dat_pc,avrank))
+      #get pc's
+      pc.ranked <- prcomp(ranked.dat, scale = TRUE)
+      summary <- summary(pc.ranked)
+      standard.score <- -pc.ranked$x[,1] - min(-pc.ranked$x[,1])
+      return(list(scorez = standard.score, sum = summary))
+    }
+    
+    
+    percap <- PCcc(new_dat_pc)
+    ag <- AGcc(new_dat)
+    
+    scores21 <- tibble(cc21.r$name,ag$scorez, percap$scorez, cc21.r$basic2021)
+    names(scores21) <- c("Name","Ag","PC", "Status")
+    scores21$Symbols <- rep(0, nrow(scores21))
+    scores21$Symbols[a] <- 1
+    scores21$Alpha <- rep(0, nrow(scores21))
+    scores21$Alpha[a] <- 1
+    
+    
+    #creates a plot and colors by Carnegie Classification Colors  
+    ggplot(scores21, aes(Ag, PC)) + geom_point(aes(color = factor(Status), shape = factor(Symbols), size = factor(Symbols)))  + 
+      ggtitle("2021 Classifications") + theme_classic() + coord_fixed(ratio = 1) + guides(shape = FALSE, size = FALSE) + 
+      theme(plot.title = element_text(hjust = 0.5)) + scale_color_discrete(name = "Classification") + 
+      scale_alpha_manual(aes(Alpha)) + xlab("Aggregate") + ylab("Per Capita")
+    
+    
+    
+  })
+  
+  ## table of current values
+  output$table.out <- renderTable({
+    
+    inst_name <- new_school()
+    
+    a <- which(as.character(cc2021Ps$name) == as.character(inst_name))
+    
+    #new_table <- rbind(cc2021Ps[a,],topten)
+    inst_name <- new_school()
+    new_dat <- cc21Ps
+    
+    
+    ##References School of Interest  
+    a <- which(as.character(new_dat$name) == as.character(inst_name))
+    #current_school <- as.character(input$school)
+    print(new_dat[a,])
+    
   })
   
   

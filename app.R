@@ -104,8 +104,8 @@ ui <- fluidPage(
     # Show a plot of the generated distribution
     mainPanel(
       tabsetPanel(type = "pills",
-                  tabPanel("2021 Update",list(plotOutput("classPlot"),tableOutput("table.out"))),
-                  tabPanel("2018 Update",list(plotOutput("classPlot"))),
+                  tabPanel("2021 Update",list(plotOutput("classPlot21"),tableOutput("table.out21"))),
+                  tabPanel("2018 Update",list(plotOutput("classPlot"), tableOutput("table.out"))),
                   tabPanel("2015 Update", plotOutput("ccPlot"))
                   
                   
@@ -174,14 +174,14 @@ server <- function(input, output,session) {
     reset("form")
   })
   
-  output$classPlot <- renderPlot({
+  output$classPlot21 <- renderPlot({
     
     inst_name <- new_school()
     new_dat <- cc21Ps
     
     
     ##References School of Interest  
-    a <- which(as.character(new_dat$NAME) == as.character(inst_name))
+    a <- which(as.character(new_dat$name) == as.character(inst_name))
     #current_school <- as.character(input$school)
     
     ##To Move Left or Right
@@ -205,10 +205,9 @@ server <- function(input, output,session) {
     
     ## Calculates the Per-Capita version of the data frame
     #creates the newdat pc object 
-    new_dat_pc <- new_dat[,c("pdnfrstaff","serd","nonserd")]/new_dat$FACNUM
+    new_dat_pc <- new_dat[,c("pdnfrstaff","serd","nonserd")]/new_dat$facnum
     
     ### Calculates the 2021 Version of the Carnegie Classifications: 
-    
     
     AGcc <- function(x){
       #rank the data (everything but name (column 1) and basic2021 (column 2))
@@ -254,11 +253,11 @@ server <- function(input, output,session) {
   })
   
   ## table of current values
-  output$table.out <- renderTable({
+  output$table.out21 <- renderTable({
     
     inst_name <- new_school()
     
-    a <- which(as.character(cc2021Ps$name) == as.character(inst_name))
+    a <- which(as.character(cc2015Ps$NAME) == as.character(inst_name))
     
     #new_table <- rbind(cc2021Ps[a,],topten)
     inst_name <- new_school()

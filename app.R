@@ -9,16 +9,18 @@
 
 #reads in the dataset needed
 
-projectWD <- "Z:/Carnegie Classification/Paul Harmon 2018 Carnegie Update Info/Carnegie18"
-setwd(projectWD)
+#projectWD <- "Z:/Carnegie Classification/Paul Harmon 2018 Carnegie Update Info/Carnegie18"
+#setwd(projectWD)
 
 library(DT)
 library(dplyr);library(ggplot2);library(ggthemes);library(mclust);library(ggforce);library(shinyjs);library(plotly)
 cc2015 <- filter(read.csv("CC2015data.csv",header = TRUE),BASIC2015 %in%c(15,16,17))
+cc2015 <- cc2015[order(cc2015$NAME),]
 #X:/PH_Desktop/Carnegie2018/Carnegie18/2018PublicData_Jan31.csv
 cc18 <- filter(read.csv("2018PublicData_Jan31.csv"), BASIC2018 %in% c(15,16,17))
 
-CC2021 <- read.csv("CC2021data_Feb04.csv", header = TRUE)
+cc2021 <- filter(read.csv("CC2021data_Feb04.csv"),basic2021 %in% c(15,16))
+cc2021 <- cc2021[order(cc2021$name),]
 
 names <- unique(cc2015$NAME)
 #gets the right package going
@@ -248,6 +250,7 @@ server <- function(input, output,session) {
     #  theme(plot.title = element_text(hjust = 0.5)) + scale_color_discrete(name = "Classification") + 
     #  scale_alpha_manual(aes(Alpha)) + xlab("Aggregate") + ylab("Per Capita")
     
+    # Plotly code 
     scores21 %>% 
       plot_ly(x= ~Ag, y= ~PC, type="scatter", mode="markers",
               color = ~as.factor(Status), colors = "Set2",
@@ -259,7 +262,6 @@ server <- function(input, output,session) {
         title = list(title="2021 Classifications", titlefont = list(size=30)),
         xaxis = list(title = "Aggregate", showgrid = FALSE, titlefont = list(size=20)),
         yaxis = list(title = "Per Capita", showgrid = FALSE, titlefont = list(size=20)))
-    
     
     
   })

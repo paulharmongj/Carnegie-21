@@ -13,7 +13,7 @@ projectWD <- "Z:/Carnegie Classification/Paul Harmon 2018 Carnegie Update Info/C
 setwd(projectWD)
 
 library(DT)
-library(dplyr);library(ggplot2);library(ggthemes);library(mclust);library(ggforce);library(shinyjs)
+library(dplyr);library(ggplot2);library(ggthemes);library(mclust);library(ggforce);library(shinyjs);library(plotly)
 cc2015 <- filter(read.csv("CC2015data.csv",header = TRUE),BASIC2015 %in%c(15,16,17))
 #X:/PH_Desktop/Carnegie2018/Carnegie18/2018PublicData_Jan31.csv
 cc18 <- filter(read.csv("2018PublicData_Jan31.csv"), BASIC2018 %in% c(15,16,17))
@@ -104,7 +104,7 @@ ui <- fluidPage(
     # Show a plot of the generated distribution
     mainPanel(
       tabsetPanel(type = "pills",
-                  tabPanel("2021 Update",list(plotOutput("classPlot21"),tableOutput("table.out21"))),
+                  tabPanel("2021 Update",list(plotlyOutput("classPlot21"),tableOutput("table.out21"))),
                   tabPanel("2018 Update",list(plotOutput("classPlot"), tableOutput("table.out"))),
                   tabPanel("2015 Update", plotOutput("ccPlot"))
                   
@@ -174,7 +174,7 @@ server <- function(input, output,session) {
     reset("form")
   })
   
-  output$classPlot21 <- renderPlot({
+  output$classPlot21 <- renderPlotly({
     
     inst_name <- new_school()
     new_dat <- cc21Ps
@@ -243,10 +243,22 @@ server <- function(input, output,session) {
     
     
     #creates a plot and colors by Carnegie Classification Colors  
-    ggplot(scores21, aes(Ag, PC)) + geom_point(aes(color = factor(Status), shape = factor(Symbols), size = factor(Symbols)))  + 
-      ggtitle("2021 Classifications") + theme_classic() + coord_fixed(ratio = 1) + guides(shape = FALSE, size = FALSE) + 
-      theme(plot.title = element_text(hjust = 0.5)) + scale_color_discrete(name = "Classification") + 
-      scale_alpha_manual(aes(Alpha)) + xlab("Aggregate") + ylab("Per Capita")
+    # ggplot(scores21, aes(Ag, PC)) + geom_point(aes(color = factor(Status), shape = factor(Symbols), size = factor(Symbols)))  + 
+    #  ggtitle("2021 Classifications") + theme_classic() + coord_fixed(ratio = 1) + guides(shape = FALSE, size = FALSE) + 
+    #  theme(plot.title = element_text(hjust = 0.5)) + scale_color_discrete(name = "Classification") + 
+    #  scale_alpha_manual(aes(Alpha)) + xlab("Aggregate") + ylab("Per Capita")
+    
+    scores21 %>% 
+      plot_ly(x= ~Ag, y= ~PC, type="scatter", mode="markers",
+              color = ~as.factor(Status), colors = "Set2",
+              symbol = ~as.factor(Symbols),
+              name = ~as.factor(Status),
+              text = ~as.factor(Name),
+              hoverinfo = 'text') %>% 
+      layout( 
+        title = list(title="2021 Classifications", titlefont = list(size=30)),
+        xaxis = list(title = "Aggregate", showgrid = FALSE, titlefont = list(size=20)),
+        yaxis = list(title = "Per Capita", showgrid = FALSE, titlefont = list(size=20)))
     
     
     

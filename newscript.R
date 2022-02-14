@@ -1,11 +1,11 @@
 
 
-projectWD <- "Z:/Carnegie Classification/Paul Harmon 2018 Carnegie Update Info/Carnegie18"
-setwd(projectWD)
+#projectWD <- "Z:/Carnegie Classification/Paul Harmon 2018 Carnegie Update Info/Carnegie18"
+#setwd(projectWD)
 
 library(DT)
 library(dplyr);library(ggplot2);library(ggthemes);library(mclust);library(ggforce);
-library(shiny); library(shinythemes);
+library(shiny); library(shinythemes); library(plotly)
 
 library(readr)
 CC2021 <- read.csv("CC2021data_Feb04.csv", header = TRUE)
@@ -83,14 +83,29 @@ ag <- AGcc(new_dat)
 
 scores21 <- tibble(cc21.r$name,ag$scorez, percap$scorez, cc21.r$basic2021)
 names(scores21) <- c("Name","Ag","PC", "Status")
-scores21$Symbols <- rep(0, nrow(scores21))
+scores21$Symbols <- rep(6, nrow(scores21))
 # scores21$Symbols[a] <- 1
-scores21$Alpha <- rep(0, nrow(scores21))
+scores21$Alpha <- rep(6, nrow(scores21))
 # scores21$Alpha[a] <- 1
 
 #creates a plot and colors by Carnegie Classification Colors  
-ggplot(scores21, aes(Ag, PC)) + geom_point(aes(color = factor(Status), shape = factor(Symbols), size = factor(Symbols)))  + 
-  ggtitle("2021 Classifications") + theme_classic() + coord_fixed(ratio = 1) + guides(shape = FALSE, size = FALSE) + 
-  theme(plot.title = element_text(hjust = 0.5)) + scale_color_discrete(name = "Classification") + 
-  scale_alpha_manual(aes(Alpha)) + xlab("Aggregate") + ylab("Per Capita")
+#ggplot(scores21, aes(Ag, PC)) + geom_point(aes(color = factor(Status), shape = factor(Symbols), size = factor(Symbols)))  + 
+#  ggtitle("2021 Classifications") + theme_classic() + coord_fixed(ratio = 1) + guides(shape = FALSE, size = FALSE) + 
+#  theme(plot.title = element_text(hjust = 0.5)) + scale_color_discrete(name = "Classification") + 
+#  scale_alpha_manual(aes(Alpha)) + xlab("Aggregate") + ylab("Per Capita")
 
+p <- scores21 %>% plot_ly( type="scatter", mode="markers") %>% 
+  add_markers(x= ~Ag, y= ~PC,
+              text = ~as.factor(Name),
+              color = ~as.factor(Status), colors = "Set2",
+              symbol = ~as.factor(Symbols),
+              name = ~as.factor(Status),
+              size = scores21$Symbols,
+              hoverinfo = 'text',
+              ) %>%
+  layout( 
+    title = list(title="2021 Classifications", titlefont = list(size=30)),
+    xaxis = list(title = "Aggregate", showgrid = FALSE, titlefont = list(size=20)),
+    yaxis = list(title = "Per Capita", showgrid = FALSE, titlefont = list(size=20)))
+
+p

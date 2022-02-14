@@ -9,12 +9,20 @@
 
 #reads in the dataset needed
 
+<<<<<<< HEAD
 # projectWD <- "Z:/Carnegie Classification/Paul Harmon 2018 Carnegie Update Info/Carnegie18"
 # setwd(projectWD)
 
 library(DT)
 library(dplyr);library(ggplot2);library(ggthemes); library(colorspace)
 library(mclust);library(ggforce);library(shinyjs);library(plotly)
+=======
+#projectWD <- "Z:/Carnegie Classification/Paul Harmon 2018 Carnegie Update Info/Carnegie18"
+#setwd(projectWD)
+
+library(DT)
+library(dplyr);library(ggplot2);library(ggthemes);library(mclust);library(ggforce);library(shinyjs);library(plotly)
+>>>>>>> 474814905f9bafae3d0176680b8d1b191500a045
 cc2015 <- filter(read.csv("CC2015data.csv",header = TRUE),BASIC2015 %in%c(15,16,17))
 cc2015 <- cc2015[order(cc2015$NAME),]
 #X:/PH_Desktop/Carnegie2018/Carnegie18/2018PublicData_Jan31.csv
@@ -109,7 +117,11 @@ ui <- fluidPage(
     mainPanel(
       tabsetPanel(type = "pills",
                   tabPanel("2021 Update",list(plotlyOutput("classPlot21"),tableOutput("table.out21"))),
+<<<<<<< HEAD
                   tabPanel("2018 Update",list(plotlyOutput("classPlot18"), tableOutput("table.out"))),
+=======
+                  tabPanel("2018 Update",list(plotOutput("classPlot"), tableOutput("table.out"))),
+>>>>>>> 474814905f9bafae3d0176680b8d1b191500a045
                   tabPanel("2015 Update", plotOutput("ccPlot"))
                   
                   
@@ -247,12 +259,31 @@ server <- function(input, output,session) {
     
     
     #creates a plot and colors by Carnegie Classification Colors  
+<<<<<<< HEAD
     #P <- ggplot(scores21, aes(Ag, PC)) + geom_point(aes(color = factor(Status), shape = factor(Symbols), size = factor(Symbols)))  + 
+=======
+    # ggplot(scores21, aes(Ag, PC)) + geom_point(aes(color = factor(Status), shape = factor(Symbols), size = factor(Symbols)))  + 
+>>>>>>> 474814905f9bafae3d0176680b8d1b191500a045
     #  ggtitle("2021 Classifications") + theme_classic() + coord_fixed(ratio = 1) + guides(shape = FALSE, size = FALSE) + 
     #  theme(plot.title = element_text(hjust = 0.5)) + scale_color_discrete(name = "Classification") + 
     #  scale_alpha_manual(aes(Alpha)) + xlab("Aggregate") + ylab("Per Capita")
     
+<<<<<<< HEAD
     # ggplotly(P)
+=======
+    # Plotly code 
+    scores21 %>% 
+      plot_ly(x= ~Ag, y= ~PC, type="scatter", mode="markers",
+              color = ~as.factor(Status), colors = "Set2",
+              symbol = ~as.factor(Symbols),
+              name = ~as.factor(Status),
+              text = ~as.factor(Name),
+              hoverinfo = 'text') %>% 
+      layout( 
+        title = list(title="2021 Classifications", titlefont = list(size=30)),
+        xaxis = list(title = "Aggregate", showgrid = FALSE, titlefont = list(size=20)),
+        yaxis = list(title = "Per Capita", showgrid = FALSE, titlefont = list(size=20)))
+>>>>>>> 474814905f9bafae3d0176680b8d1b191500a045
     
     scores21 %>% 
       plot_ly(x= ~Ag, y= ~PC, type="scatter", mode="markers",

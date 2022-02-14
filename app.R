@@ -9,16 +9,19 @@
 
 #reads in the dataset needed
 
-projectWD <- "Z:/Carnegie Classification/Paul Harmon 2018 Carnegie Update Info/Carnegie18"
-setwd(projectWD)
+# projectWD <- "Z:/Carnegie Classification/Paul Harmon 2018 Carnegie Update Info/Carnegie18"
+# setwd(projectWD)
 
 library(DT)
-library(dplyr);library(ggplot2);library(ggthemes);library(mclust);library(ggforce);library(shinyjs)
+library(dplyr);library(ggplot2);library(ggthemes);library(mclust);library(ggforce);library(shinyjs);library(plotly)
 cc2015 <- filter(read.csv("CC2015data.csv",header = TRUE),BASIC2015 %in%c(15,16,17))
+cc2015 <- cc2015[order(cc2015$NAME),]
 #X:/PH_Desktop/Carnegie2018/Carnegie18/2018PublicData_Jan31.csv
 cc18 <- filter(read.csv("2018PublicData_Jan31.csv"), BASIC2018 %in% c(15,16,17))
+cc18 <- cc18[order(cc18$NAME),]
 
-CC2021 <- read.csv("CC2021data_Feb04.csv", header = TRUE)
+cc2021 <- filter(read.csv("CC2021data_Feb04.csv"),basic2021 %in% c(15,16))
+cc2021 <- cc2021[order(cc2021$name),]
 
 names <- unique(cc2015$NAME)
 #gets the right package going
@@ -104,7 +107,7 @@ ui <- fluidPage(
     # Show a plot of the generated distribution
     mainPanel(
       tabsetPanel(type = "pills",
-                  tabPanel("2021 Update",list(plotOutput("classPlot21"),tableOutput("table.out21"))),
+                  tabPanel("2021 Update",list(plotlyOutput("classPlot21"),tableOutput("table.out21"))),
                   tabPanel("2018 Update",list(plotOutput("classPlot"), tableOutput("table.out"))),
                   tabPanel("2015 Update", plotOutput("ccPlot"))
                   
@@ -147,15 +150,15 @@ cc2015.r <- data.frame(cc2015Ps[,1:3],sapply(cc2015Ps[,-c(1:3)],minrank))
 
 ## for 2018
 cc18.r <- data.frame(cc18Ps[,1:4],sapply(cc18Ps[,-c(1:4)],avrank)) 
-cc18percap <- cc18Ps[,c("PDNFRSTAFF","S.ER.D","NONS.ER.D")]/cc18Ps$FACNUM
-colnames(cc18percap) <- c("PDNRSTAFF_PC", "S.ER.D_PC", "NONS.ER.D_PC")
-cc18percap.r<-data.frame(sapply(cc18percap,avrank))
+#cc18percap <- cc18Ps[,c("PDNFRSTAFF","S.ER.D","NONS.ER.D")]/cc18Ps$FACNUM
+#colnames(cc18percap) <- c("PDNRSTAFF_PC", "S.ER.D_PC", "NONS.ER.D_PC")
+#cc18percap.r<-data.frame(sapply(cc18percap,avrank))
 
 ## For 2021
 cc21.r <- data.frame(cc21Ps[,1:2],sapply(cc21Ps[,-c(1:2)],avrank)) 
-cc21percap <- cc21Ps[,c("pdnfrstaff","serd","nonserd")]/cc21Ps$facnum
-colnames(cc21percap) <- c("pdnfrstaff","serd","nonserd")
-cc21percap.r<-data.frame(sapply(cc21percap,avrank))
+#cc21percap <- cc21Ps[,c("pdnfrstaff","serd","nonserd")]/cc21Ps$facnum
+#colnames(cc21percap) <- c("pdnfrstaff","serd","nonserd")
+#cc21percap.r<-data.frame(sapply(cc21percap,avrank))
 
 
 
@@ -174,7 +177,7 @@ server <- function(input, output,session) {
     reset("form")
   })
   
-  output$classPlot21 <- renderPlot({
+  output$classPlot21 <- renderPlotly({
     
     inst_name <- new_school()
     new_dat <- cc21Ps
@@ -243,12 +246,25 @@ server <- function(input, output,session) {
     
     
     #creates a plot and colors by Carnegie Classification Colors  
-    ggplot(scores21, aes(Ag, PC)) + geom_point(aes(color = factor(Status), shape = factor(Symbols), size = factor(Symbols)))  + 
-      ggtitle("2021 Classifications") + theme_classic() + coord_fixed(ratio = 1) + guides(shape = FALSE, size = FALSE) + 
-      theme(plot.title = element_text(hjust = 0.5)) + scale_color_discrete(name = "Classification") + 
-      scale_alpha_manual(aes(Alpha)) + xlab("Aggregate") + ylab("Per Capita")
+    #P <- ggplot(scores21, aes(Ag, PC)) + geom_point(aes(color = factor(Status), shape = factor(Symbols), size = factor(Symbols)))  + 
+    #  ggtitle("2021 Classifications") + theme_classic() + coord_fixed(ratio = 1) + guides(shape = FALSE, size = FALSE) + 
+    #  theme(plot.title = element_text(hjust = 0.5)) + scale_color_discrete(name = "Classification") + 
+    #  scale_alpha_manual(aes(Alpha)) + xlab("Aggregate") + ylab("Per Capita")
     
+    # ggplotly(P)
     
+    scores21 %>% 
+      plot_ly(x= ~Ag, y= ~PC, type="scatter", mode="markers",
+              color = ~as.factor(Status), colors = "Set2",
+              symbol = ~as.factor(Symbols),
+              size = ~as.factor(Symbols),
+              name = ~as.factor(Status),
+              text = ~as.factor(Name),
+              hoverinfo = 'text') %>% 
+      layout( 
+        title = list(title="2021 Classifications", titlefont = list(size=30)),
+        xaxis = list(title = "Aggregate", showgrid = FALSE, titlefont = list(size=20)),
+        yaxis = list(title = "Per Capita", showgrid = FALSE, titlefont = list(size=20)))
     
   })
   
